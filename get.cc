@@ -9,6 +9,7 @@
 #include <netinet/if_ether.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include "utils.h"
 
 typedef struct _iphdr //定义IP首部 
 { 
@@ -60,15 +61,23 @@ void analyseTCP(TCP_HEADER *tcp);
 void analyseUDP(UDP_HEADER *udp);
 void analyseICMP(ICMP_HEADER *icmp);
 
+#define MY_DEST_MAC0    0x00
+#define MY_DEST_MAC1    0x00
+#define MY_DEST_MAC2    0x00
+#define MY_DEST_MAC3    0x00
+#define MY_DEST_MAC4    0x00
+#define MY_DEST_MAC5    0x00
+
+void display(const char* src, int size);
 
 int main(void)
 {
     int sockfd;
      IP_HEADER *ip;
-    unsigned char buf[10240];
+    char buf[1548];
     ssize_t n;
     /* capture ip datagram without ethernet header */
-    if ((sockfd = socket(PF_PACKET,  SOCK_RAW, htons(ETH_P_IP)))== -1)
+    if ((sockfd = socket(PF_PACKET,  SOCK_RAW, htons(ETH_P_ALL)))== -1)
     {    
         printf("socket error!\n");
         return 1;
@@ -82,11 +91,28 @@ int main(void)
             break;
         }
         else if (n==0)
-            continue;
+            continue;   //continue to recv
+        char mac_addr[6], source_mac_addr[6];
+        mac_addr[0] = MY_DEST_MAC0;
+        mac_addr[1] = MY_DEST_MAC1;
+        mac_addr[2] = MY_DEST_MAC2;
+        mac_addr[3] = MY_DEST_MAC3;
+        mac_addr[4] = MY_DEST_MAC4;
+        mac_addr[5] = MY_DEST_MAC5;
+        if (strncmp(buf, mac_addr, 6) == 0) //get eth packet
+        {
+            strncpy(source_mac_addr, buf+6, 6);
+            //display(source_mac_addr, 6);
+            display(buf, 100);
+            break;
+        }
+        
+        /*
         for (int i = 0; i < sizeof(buf); ++i)
         {
         	printf("%02x:", buf[i]);
-        }
+        }*/
+
         //接收数据不包括数据链路帧头
         /*
         ip = ( IP_HEADER *)(buf);
@@ -151,4 +177,12 @@ void analyseICMP(ICMP_HEADER *icmp)
     printf("ICMP -----\n");
     printf("type: %u\n", icmp->icmp_type);
     printf("sub code: %u\n", icmp->icmp_code);
+}
+
+void display(const char* src, int size)
+{
+    for (int i = 0; i < size; ++i)
+    {
+        printf("%02x:", (unsigned char)src[i]);
+    }
 }
