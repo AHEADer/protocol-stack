@@ -13,3 +13,4 @@
 
 char *get_interface_name();
 int get_lo_interface_num(int listen_socket);
+//int get_mac_address(char* device_name, unsigned char* mac_buf);

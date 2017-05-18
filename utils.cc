@@ -37,3 +37,15 @@ int get_lo_interface_num(int listen_socket)
     }
     return ifr.ifr_ifindex;
 }
+/*
+int get_mac_address(char* device_name, unsigned char* mac_buf)
+{
+    struct ifreq ifr;
+    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if (sock == -1)  return -1;
+    strcpy(ifr.ifr_name, device_name);
+    if (ioctl(sock, SIOCGIFINDEX, &ifr) == -1)
+        return -1;
+    strcpy((char *)mac_buf, ifr.ifr_hwaddr.sa_data);
+    return 1;
+}*/

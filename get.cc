@@ -93,19 +93,28 @@ int main(void)
         else if (n==0)
             continue;   //continue to recv
         char mac_addr[6], source_mac_addr[6];
+        char type[2];
         mac_addr[0] = MY_DEST_MAC0;
         mac_addr[1] = MY_DEST_MAC1;
         mac_addr[2] = MY_DEST_MAC2;
         mac_addr[3] = MY_DEST_MAC3;
         mac_addr[4] = MY_DEST_MAC4;
         mac_addr[5] = MY_DEST_MAC5;
-        if (strncmp(buf, mac_addr, 6) == 0) //get eth packet
+        if (strncmp(buf, mac_addr, 6) != 0) //get eth packet
         {
-            strncpy(source_mac_addr, buf+6, 6);
-            //display(source_mac_addr, 6);
-            display(buf, 100);
-            break;
+            continue;
+            
         }
+        if (type[0] == 0x08 && type[1] == 0x00)
+        {
+            //which means packet is ipv4
+
+        }
+        strncpy(source_mac_addr, buf+6, 6);
+        strncpy(type, buf+12, 2);
+        //display(source_mac_addr, 6);
+        display(buf, 100);
+        //break;
         
         /*
         for (int i = 0; i < sizeof(buf); ++i)
@@ -114,8 +123,8 @@ int main(void)
         }*/
 
         //接收数据不包括数据链路帧头
-        /*
-        ip = ( IP_HEADER *)(buf);
+        
+        ip = ( IP_HEADER *)(buf+14);
         analyseIP(ip);
         size_t iplen =  (ip->h_verlen&0x0f)*4;
         TCP_HEADER *tcp = (TCP_HEADER *)(buf +iplen);
@@ -142,8 +151,9 @@ int main(void)
         {
             printf("other protocol!\n");
         }        
-        printf("\n\n");*/
-        //break;
+        printf("\n\n");
+        break;
+        
     }
     close(sockfd);
     return 0;
@@ -185,4 +195,5 @@ void display(const char* src, int size)
     {
         printf("%02x:", (unsigned char)src[i]);
     }
+    printf("\n");
 }
