@@ -60,6 +60,7 @@ void analyseIP(IP_HEADER *ip);
 void analyseTCP(TCP_HEADER *tcp);
 void analyseUDP(UDP_HEADER *udp);
 void analyseICMP(ICMP_HEADER *icmp);
+int analyseEthernet(char* type);
 
 #define MY_DEST_MAC0    0x00
 #define MY_DEST_MAC1    0x00
@@ -105,26 +106,19 @@ int main(void)
             continue;
             
         }
-        if (type[0] == 0x08 && type[1] == 0x00)
-        {
-            //which means packet is ipv4
-
-        }
-        strncpy(source_mac_addr, buf+6, 6);
         strncpy(type, buf+12, 2);
-        //display(source_mac_addr, 6);
-        display(buf, 100);
-        //break;
-        
-        /*
-        for (int i = 0; i < sizeof(buf); ++i)
+        if (analyseEthernet(type)==4)
         {
-        	printf("%02x:", buf[i]);
-        }*/
+            printf("ipv 4 protocol\n");
+        }
+        else
+            continue;
 
-        //接收数据不包括数据链路帧头
         
+
         ip = ( IP_HEADER *)(buf+14);
+        printf("length is %d\n", ip->total_len);
+        display(buf, 100);
         analyseIP(ip);
         size_t iplen =  (ip->h_verlen&0x0f)*4;
         TCP_HEADER *tcp = (TCP_HEADER *)(buf +iplen);
@@ -196,4 +190,16 @@ void display(const char* src, int size)
         printf("%02x:", (unsigned char)src[i]);
     }
     printf("\n");
+}
+
+int analyseEthernet(char* type)
+{
+    unsigned int eth_type = type[0]+type[1]<<8;
+    switch(eth_type)
+    {
+        case 0x0800: return 4;
+        case 0x86dd: return 6;
+        case 0x8809: return 8023;
+        case 0x9000: return 9000;
+    }
 }
