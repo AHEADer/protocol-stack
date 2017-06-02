@@ -130,7 +130,7 @@ int main(void)
         size_t iplen =  (ip->h_verlen&0x0f)*4;
         printf("ip head length is %d\n", iplen);
         
-        int ip_total_len = ip->total_len;
+        unsigned short ip_total_len = ip->total_len;
         int transmit = 0;
         if (ip_total_len>1500-14-iplen)
         {
@@ -140,13 +140,22 @@ int main(void)
         else
         {
         	transmit = 1499;
-        	display(buf, transmit);	
+        		
         }
         iplen = iplen+14;
         if (ip->proto == IPPROTO_TCP)
         {
             TCP_HEADER *tcp = (TCP_HEADER *)(buf +iplen);
             analyseTCP(tcp);
+            if (tcp->th_flag == 0x2)
+            {
+            	printf("SYN established!\n");
+            	//display(buf, transmit);
+            	printf("th_seq is %u\n", ntohs(tcp->th_seq));
+            	/*answer three handshake*/
+            	//Answer()
+            	break;
+            }
         }
         else if (ip->proto == IPPROTO_UDP)
         {
@@ -169,7 +178,7 @@ int main(void)
         printf("\n\n");
         if (transmit<1500)
         {
-        	break;
+        	;
         }
         //break;
         
@@ -192,6 +201,7 @@ void analyseTCP(TCP_HEADER *tcp)
     printf("TCP -----\n");
     printf("Source port: %u\n", ntohs(tcp->th_sport));
     printf("Dest port: %u\n", ntohs(tcp->th_dport));
+    printf("flags is %x\n", tcp->th_flag);
 }
 
 void analyseUDP(UDP_HEADER *udp)
