@@ -10,6 +10,13 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include "utils.h"
+/*mqueue needed*/
+#include <mqueue.h>
+#include <sys/stat.h>
+
+#define TCP_QUEUE  "/tcp_queue"
+#define MAX_SIZE    1500
+#define MSG_STOP    "exit"
 
 typedef struct _iphdr //定义IP首部 
 { 
@@ -109,7 +116,7 @@ int main(void)
         strncpy(type, buf+12, 2);
         if (analyseEthernet(type)==4)
         {
-            printf("ipv 4 protocol\n");
+            printf("ipv 4 protocol\n");//analyse ipv4 packet in link layer
         }
         else
             continue;
@@ -117,11 +124,25 @@ int main(void)
         
 
         ip = ( IP_HEADER *)(buf+14);
-        printf("length is %d\n", ip->total_len);
-        display(buf, 100);
+        
+        
         analyseIP(ip);
         size_t iplen =  (ip->h_verlen&0x0f)*4;
-        TCP_HEADER *tcp = (TCP_HEADER *)(buf +iplen);
+        printf("ip head length is %d\n", iplen);
+        
+        int ip_total_len = ip->total_len;
+        int transmit = 0;
+        if (ip_total_len>1500-14-iplen)
+        {
+        	transmit = 1500;
+        	printf("not a single packet\n");
+        }
+        else
+        {
+        	transmit = 1499;
+        	display(buf, transmit);	
+        }
+        iplen = iplen+14;
         if (ip->proto == IPPROTO_TCP)
         {
             TCP_HEADER *tcp = (TCP_HEADER *)(buf +iplen);
@@ -130,12 +151,12 @@ int main(void)
         else if (ip->proto == IPPROTO_UDP)
         {
             UDP_HEADER *udp = (UDP_HEADER *)(buf + iplen);
-            analyseUDP(udp);
+            //analyseUDP(udp);
         }
         else if (ip->proto == IPPROTO_ICMP)
         {
             ICMP_HEADER *icmp = (ICMP_HEADER *)(buf + iplen);
-            analyseICMP(icmp);
+            //analyseICMP(icmp);
         }
         else if (ip->proto == IPPROTO_IGMP)
         {
@@ -146,7 +167,11 @@ int main(void)
             printf("other protocol!\n");
         }        
         printf("\n\n");
-        break;
+        if (transmit<1500)
+        {
+        	break;
+        }
+        //break;
         
     }
     close(sockfd);
