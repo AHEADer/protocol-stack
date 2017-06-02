@@ -82,7 +82,7 @@ int main(void)
 {
     int sockfd;
      IP_HEADER *ip;
-    char buf[1548];
+    char buf[2000];
     ssize_t n;
     /* capture ip datagram without ethernet header */
     if ((sockfd = socket(PF_PACKET,  SOCK_RAW, htons(ETH_P_ALL)))== -1)
@@ -108,6 +108,7 @@ int main(void)
         mac_addr[3] = MY_DEST_MAC3;
         mac_addr[4] = MY_DEST_MAC4;
         mac_addr[5] = MY_DEST_MAC5;
+        //printf("cmp is %d\n", strncmp(buf, mac_addr, 6));
         if (strncmp(buf, mac_addr, 6) != 0) //get eth packet
         {
             continue;
@@ -128,10 +129,10 @@ int main(void)
         
         analyseIP(ip);
         size_t iplen =  (ip->h_verlen&0x0f)*4;
-        printf("ip head length is %d\n", iplen);
         
         unsigned short ip_total_len = ip->total_len;
         int transmit = 0;
+        printf("total len is %u\n", ip_total_len);
         if (ip_total_len>1500-14-iplen)
         {
         	transmit = 1500;
@@ -139,9 +140,11 @@ int main(void)
         }
         else
         {
+        	printf("total len is %u\n", ip_total_len);
         	transmit = 1499;
         		
         }
+       display(buf, 1999);
         iplen = iplen+14;
         if (ip->proto == IPPROTO_TCP)
         {
