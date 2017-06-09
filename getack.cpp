@@ -19,7 +19,6 @@
 #define TCP_QUEUE  "/tcp_queue"
 #define MAX_SIZE    1500
 #define MSG_STOP    "exit"
-//sudo tcpdump -nettti lo '(ether dst host 00:00:00:00:00:00)' -X
 
 typedef struct _iphdr //定义IP首部 
 { 
@@ -140,32 +139,34 @@ int main(void)
         printf("total len is %u\n", ip_total_len);
         if (ip_total_len>1500-14-iplen)
         {
-        	transmit = 1500;
-        	printf("not a single packet\n");
+            transmit = 1500;
+            printf("not a single packet\n");
         }
         else
         {
-        	printf("total len is %u\n", ip_total_len);
-        	transmit = 1499;
-        		
+            printf("total len is %u\n", ip_total_len);
+            transmit = 1499;
+                
         }
         printf("checksum is %u\n", checksum2(buf+14, 16));
-        display(buf, 14);
-        display(buf+14, 20);
-        display(buf+34, 44);
+        
         iplen = iplen+14;
         if (ip->proto == IPPROTO_TCP)
         {
             TCP_HEADER *tcp = (TCP_HEADER *)(buf +iplen);
-            analyseTCP(tcp);
-            if (tcp->th_flag == 0x2)
+            
+            if (tcp->th_flag == 0x12)
             {
-            	printf("SYN established!\n");
-            	//display(buf, transmit);
-            	printf("th_seq is %u\n", ntohl(tcp->th_seq));
-            	/*answer three handshake*/
-            	Answer(tcp);
-            	break;
+                analyseTCP(tcp);
+                display(buf, 14);
+                display(buf+14, 20);
+                display(buf+34, 44);
+                printf("SYN established!\n");
+                //display(buf, transmit);
+                printf("th_seq is %u\n", ntohl(tcp->th_seq));
+                /*answer three handshake*/
+                //Answer(tcp);
+                break;
             }
         }
         else if (ip->proto == IPPROTO_UDP)
@@ -189,7 +190,7 @@ int main(void)
         printf("\n\n");
         if (transmit<1500)
         {
-        	;
+            ;
         }
         //break;
         
@@ -265,12 +266,12 @@ void Answer(TCP_HEADER* tcp)
     tcp_ans.th_dport = tcp->th_sport;
     tcp_ans.th_sport = tcp->th_dport;
     tcp_ans.th_ack = htonl(ntohl(tcp->th_seq)+1);
-    unsigned int rd = rand()%0xffffffff + 1;
+    unsigned short rd = rand()%0xffffffff + 1;
     printf("%x\n", rd);
-    tcp_ans.th_seq = rd;
+    tcp_ans.th_seq = htonl(rd);
     tcp_ans.th_lenres = tcp->th_lenres;
     tcp_ans.th_flag = 0x12;
-    tcp_ans.th_win = htons(0xaaaa);
+    tcp_ans.th_win = tcp->th_win;
     tcp_ans.th_sum = htons(0xfe30);
     tcp_ans.th_urp = tcp->th_urp;
     write(ans, &tcp_ans, 20);
